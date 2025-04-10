@@ -66,6 +66,10 @@ dkms.conf
 .idea/**/dictionaries
 .idea/**/shelf
 
+# Ignore created database files for requests_db
+requests_db.dir
+requests_db.pag
+
 # AWS User-specific
 .idea/**/aws.xml
 
