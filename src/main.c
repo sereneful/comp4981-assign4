@@ -1,3 +1,4 @@
+/* main.c */
 #include "monitor.h"
 #include "server.h"
 #include "utils.h"
@@ -9,9 +10,17 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
-static volatile sig_atomic_t stopServer = 0;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wglobal-constructors"
+#endif
+static volatile sig_atomic_t stopServer = 0;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables,-warnings-as-errors)
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#endif
 
 void setup_signal_handler(void);
 void sig_handler(int sig);
@@ -25,8 +34,8 @@ int main(int argc, char *argv[])
     int                domainPair[2]; /* UNIX domain socket pair for main<->monitor communication */
     pid_t              monitorPid;
     fd_set             mainSet;
+    int                status;
 
-    /* Unused parameters */
     (void)argc;
     (void)argv;
 
@@ -54,7 +63,7 @@ int main(int argc, char *argv[])
     {
         /* Monitor process */
         close(domainPair[0]);
-        monitor_loop(domainPair[1]);    // monitor_loop is noreturn—no code after this call is needed.
+        monitor_loop(domainPair[1]); /* monitor_loop is noreturn */
     }
     /* Main process */
     close(domainPair[1]);
@@ -105,6 +114,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* Graceful shutdown: send termination signal to monitor and wait for it */
+    kill(monitorPid, SIGTERM);
+    waitpid(monitorPid, &status, 0);
+
     close(listenSock);
     close(domainPair[0]);
     return 0;
@@ -114,8 +127,22 @@ void setup_signal_handler(void)
 {
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+#endif
     sa.sa_handler = sig_handler;
-    sigaction(SIGINT, &sa, NULL);
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#endif
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    if(sigaction(SIGINT, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void sig_handler(int sig)
