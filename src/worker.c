@@ -21,13 +21,13 @@ __attribute__((noreturn)) void worker_loop(int workerSock)
     void  *libHandle;
     time_t libLastMod;
 
-    libHandle = dlopen("../http.so", RTLD_NOW);
+    libHandle = dlopen("libhttp.so", RTLD_NOW);
     if(!libHandle)
     {
         fprintf(stderr, "Worker: Failed to load shared library: %s\n", dlerror());
         exit(EXIT_FAILURE);
     }
-    libLastMod = get_last_mod_time("../http.so");
+    libLastMod = get_last_mod_time("libhttp.so");
 
     while(1)
     {
@@ -69,7 +69,7 @@ static int handle_client_request(int clientSock, void **libHandle, time_t *libLa
         return 1;
     }
 
-    currMod = get_last_mod_time("../http.so");
+    currMod = get_last_mod_time("libhttp.so");
     if(currMod > *libLastMod)
     {
         printf("Worker: Reloading updated shared library...\n");
@@ -77,7 +77,7 @@ static int handle_client_request(int clientSock, void **libHandle, time_t *libLa
         {
             dlclose(*libHandle);
         }
-        *libHandle = dlopen("../http.so", RTLD_NOW);
+        *libHandle = dlopen("libhttp.so", RTLD_NOW);
         if(!*libHandle)
         {
             fprintf(stderr, "Worker: Reload error: %s\n", dlerror());
