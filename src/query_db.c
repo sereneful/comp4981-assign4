@@ -8,10 +8,15 @@
 
 int main(void)
 {
-    DBM  *db;
-    datum key;
+    DBM       *db;
+    datum      key;
+    const char dbFile[] = "requests_db"; /* Declare as a constant array */
 
-    db = dbm_open("requests_db", O_RDONLY, 0);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
+    db = dbm_open((char *)dbFile, O_RDONLY, 0);
+#pragma clang diagnostic pop
+
     if(db == NULL)
     {
         perror("dbm_open");
@@ -20,7 +25,6 @@ int main(void)
 
     for(key = dbm_firstkey(db); key.dptr != NULL; key = dbm_nextkey(db))
     {
-        /* Declare value in the loop to limit its scope */
         datum value = dbm_fetch(db, key);
         printf("Key: %s\n", key.dptr);
         if(value.dptr)
