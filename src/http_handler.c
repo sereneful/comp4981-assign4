@@ -9,6 +9,8 @@
 #include <time.h>
 #include <unistd.h>
 
+void handle_http_request(int clientSock, const char *req);
+
 /* Local helper prototypes */
 static int serve_file(int clientSock, const char *method, const char *path);
 static int handle_post(int clientSock, const char *req);
@@ -108,7 +110,7 @@ static int handle_post(int clientSock, const char *req)
     datum       key;
     datum       value;
     const char  dbFile_const[] = "requests_db";
-    const char *dbFile         = dbFile_const; /* Declare pointer to const */
+    const char *dbFile         = dbFile_const; /* dbFile is a pointer to const */
     char        uniqueKey[UNIQUE_KEY_SIZE];
     char       *body;
     time_t      now;
@@ -127,8 +129,12 @@ static int handle_post(int clientSock, const char *req)
     now = time(NULL);
     snprintf(uniqueKey, sizeof(uniqueKey), "post_%ld", now);
 
-    /* Cast dbFile to char* for dbm_open */
+    /* Disable the cast qualifier warning for the call to dbm_open */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
     db = dbm_open((char *)dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+#pragma clang diagnostic pop
+
     if(db == NULL)
     {
         perror("dbm_open");
