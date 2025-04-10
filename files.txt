@@ -1,3 +1,3 @@
 server src/main.c src/monitor.c include/monitor.h src/utils.c include/utils.h src/worker.c include/worker.h dl gdbm_compat
-http.so src/http_handler.c include/server.h dl gdbm_compat
+http src/http_handler.c include/server.h dl gdbm_compat 
 query_db src/query_db.c gdbm_compat
